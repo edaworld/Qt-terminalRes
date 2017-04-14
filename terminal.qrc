@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/application-exit.png</file>
+        <file>images/connected.ico</file>
+        <file>images/disconnected.ico</file>
+        <file>images/gear.ico</file>
+        <file>images/broom.ico</file>
+        <file>images/heartbeat.ico</file>
+        <file>images/exit.ico</file>
+        <file>images/chart.ico</file>
+        <file>images/help.ico</file>
+        <file>images/history.ico</file>
+        <file>images/data.png</file>
+        <file>images/return.png</file>
+        <file>images/excel.ico</file>
+    </qresource>
+</RCC>

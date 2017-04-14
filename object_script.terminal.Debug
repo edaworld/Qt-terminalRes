@@ -1,0 +1,12 @@
+INPUT(
+./debug\main.o
+./debug\mainwindow.o
+./debug\settingsdialog.o
+./debug\hismainwin.o
+./debug\datathread.o
+./debug\terminal_plugin_import.o
+./debug\qrc_terminal.o
+./debug\moc_hismainwin.o
+./debug\moc_mainwindow.o
+./debug\moc_settingsdialog.o
+);

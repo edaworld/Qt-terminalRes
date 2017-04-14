@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/">
+        <file>heartRate.qss</file>
+        <file>tabwidget/file_selected.ico</file>
+        <file>tabwidget/help.ico</file>
+        <file>tabwidget/help_selected.ico</file>
+        <file>tabwidget/history.ico</file>
+        <file>tabwidget/history_selected.ico</file>
+        <file>tabwidget/receive.ico</file>
+        <file>tabwidget/receive_selected.ico</file>
+        <file>tabwidget/set.ico</file>
+        <file>tabwidget/set_selected.ico</file>
+        <file>tabwidget/file.ico</file>
+        <file>tabwidget/start.ico</file>
+        <file>tabwidget/stop.ico</file>
+        <file>png/arrow.png</file>
+        <file>gif/run.gif</file>
+    </qresource>
+</RCC>

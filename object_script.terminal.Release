@@ -1,0 +1,12 @@
+INPUT(
+./release\main.o
+./release\mainwindow.o
+./release\settingsdialog.o
+./release\hismainwin.o
+./release\datathread.o
+./release\terminal_plugin_import.o
+./release\qrc_terminal.o
+./release\moc_hismainwin.o
+./release\moc_mainwindow.o
+./release\moc_settingsdialog.o
+);
