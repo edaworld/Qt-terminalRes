@@ -125,7 +125,6 @@ release/qrc_terminal.cpp: terminal.qrc \
 		images/disconnected.ico \
 		images/excel.ico \
 		images/history.ico \
-		images/application-exit.png \
 		images/connected.ico \
 		images/exit.ico \
 		images/chart.ico \
@@ -133,8 +132,7 @@ release/qrc_terminal.cpp: terminal.qrc \
 		images/broom.ico \
 		images/heartbeat.ico \
 		images/return.png \
-		images/help.ico \
-		images/data.png
+		images/help.ico
 	C:\Qt\5.6.0_MinGW_static\bin\rcc.exe -name terminal terminal.qrc -o release\qrc_terminal.cpp
 
 compiler_dumpcpp_decl_make_all:

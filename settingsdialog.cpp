@@ -124,7 +124,7 @@ void SettingsDialog::fillPortsParameters()
     ui->baudRateBox->addItem(QStringLiteral("38400"), QSerialPort::Baud38400);
     ui->baudRateBox->addItem(QStringLiteral("57600"), QSerialPort::Baud57600);
     ui->baudRateBox->addItem(QStringLiteral("115200"), QSerialPort::Baud115200);
-    ui->baudRateBox->setCurrentIndex(3);//默认选择波特率为115200
+    ui->baudRateBox->setCurrentIndex(4);//默认选择波特率为115200
 //    ui->baudRateBox->addItem(tr("Custom"));
 
     ui->dataBitsBox->addItem(QStringLiteral("5"), QSerialPort::Data5);

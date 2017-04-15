@@ -225,31 +225,53 @@ static quint64 sum;
 void MainWindow::readData()
 {
     quint32 rcvtemp;//暂存实部数据
-     quint32 imtemp;//暂存虚部数据
-     QByteArray dataReadAll = serial->readAll();
-    qDebug("read data size is %d,count is %d",dataReadAll.size(),dataReadAll.count());
-     if(dataReadAll.at(0) == 'S')
+    quint32 imtemp;//暂存虚部数据
+    QByteArray dataReadAll = serial->readAll();
+    quint32 sumofRe;
+    quint32 sumofIm;
+
+//    qDebug("read data size is %d,count is %d",dataReadAll.size(),dataReadAll.count());
+    char temp0[1],temp1[1],temp2[1],temp3[1],temp4[1],temp5[1],temp6[1],temp7[1];
+     if(dataReadAll.at(0) == '$')
      {
          temp.clear();
      }
      temp.append(dataReadAll.data(),dataReadAll.size());
-     if(temp.size() == 12)
+     if(temp.size() == 14)
      {
-         qDebug("temp0 is %X",(quint8)temp.at(0));
-         qDebug("temp1 is %X",(quint8)temp.at(1));
-         qDebug("temp2 is %X",(quint8)temp.at(2));
-         qDebug("temp3 is %X",(quint8)temp.at(3));
-         qDebug("temp4 is %X",(quint8)temp.at(4));
-         ReofRecv = 0;
-         rcvtemp = (quint8)temp.at(1);
-         ReofRecv |= rcvtemp<<24;
-         rcvtemp = (quint8)temp.at(2);
-         ReofRecv |= rcvtemp<<16;
-         rcvtemp = (quint8)temp.at(3);
-         ReofRecv |= rcvtemp<<8;
-         rcvtemp = (quint8)temp.at(4);
-         ReofRecv |= rcvtemp<<0;
-         qDebug("Re is %d",ReofRecv);
+
+//         qDebug("temp2 is %c",(quint8)temp.at(2));
+//         qDebug("temp3 is %c",(quint8)temp.at(3));
+//         qDebug("temp4 is %c",(quint8)temp.at(4));
+//         qDebug("temp5 is %c",(quint8)temp.at(5));
+//         qDebug("temp4 is %c",(quint8)temp.at(7));
+//         qDebug("temp4 is %c",(quint8)temp.at(8));
+//         qDebug("temp4 is %c",(quint8)temp.at(9));
+//         qDebug("temp4 is %c",(quint8)temp.at(10));
+
+         sumofRe=0;
+         temp0[0]=(quint8)temp.at(2);
+         rcvtemp = strtol(temp0,NULL,16);
+         sumofRe+= rcvtemp*4096;
+
+         temp1[0]=(quint8)temp.at(3);
+         rcvtemp = strtol(temp1,NULL,16);
+         sumofRe+= rcvtemp*256;
+
+
+
+         temp2[0]=(quint8)temp.at(4);
+         rcvtemp = strtol(temp2,NULL,16);
+         sumofRe+= rcvtemp*16;
+
+         temp3[0]=(quint8)temp.at(5);
+         rcvtemp = strtol(temp3,NULL,16);
+         sumofRe+= rcvtemp;
+         ReofRecv = sumofRe;
+//         qDebug("%d",ReofRecv);
+         qDebug("Re is %X",ReofRecv);
+
+
          yaxis[countofYaxis]=ReofRecv;
          countofYaxis++;
          if(countofYaxis == 5)
@@ -262,15 +284,25 @@ void MainWindow::readData()
              sum = 0;
          }
 
-         imtemp = (quint8)temp.at(5);
-         ImofRecv |= imtemp<<24;
-         imtemp = (quint8)temp.at(6);
-         ImofRecv |= imtemp<<16;
-         imtemp = (quint8)temp.at(7);
-         ImofRecv |= imtemp<<8;
-         imtemp = (quint8)temp.at(8);
-         ImofRecv |= imtemp<<0;
-         qDebug("Im is %d",ImofRecv);
+         sumofIm=0;
+         temp4[0]=(quint8)temp.at(7);
+         rcvtemp = strtol(temp4,NULL,16);
+         sumofIm+= rcvtemp*4096;
+
+         temp5[0]=(quint8)temp.at(8);
+         rcvtemp = strtol(temp5,NULL,16);
+         sumofIm+= rcvtemp*256;
+
+         temp6[0]=(quint8)temp.at(9);
+         rcvtemp = strtol(temp6,NULL,16);
+         sumofIm+= rcvtemp*16;
+
+         temp7[0]=(quint8)temp.at(10);
+         rcvtemp = strtol(temp7,NULL,16);
+         sumofIm+= rcvtemp;
+         ImofRecv = sumofIm;
+//         qDebug("Im is %d",ImofRecv);
+         qDebug("Im is %X",ImofRecv);
 
      }
      emit isReceiveData();//发送信号，通知processrevdata槽函数处理数据
