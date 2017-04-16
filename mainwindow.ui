@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>820</width>
-    <height>460</height>
+    <width>829</width>
+    <height>464</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -102,7 +102,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="btnCurve">
+      <widget class="QPushButton" name="btnCalibra">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -114,7 +114,7 @@
        </property>
        <property name="icon">
         <iconset resource="terminal.qrc">
-         <normaloff>:/images/help.ico</normaloff>:/images/help.ico</iconset>
+         <normaloff>:/images/calibration.ico</normaloff>:/images/calibration.ico</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -214,9 +214,9 @@
     <property name="geometry">
      <rect>
       <x>710</x>
-      <y>90</y>
+      <y>10</y>
       <width>101</width>
-      <height>141</height>
+      <height>191</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -229,7 +229,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>电阻抗</string>
+        <string>电阻抗（KΩ）</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -272,6 +272,25 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QLabel" name="label_no1_2">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>校准电阻（Ω）</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="liEdt_Calbra"/>
+     </item>
     </layout>
    </widget>
   </widget>
@@ -280,7 +299,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>820</width>
+     <width>829</width>
      <height>23</height>
     </rect>
    </property>
@@ -428,6 +447,7 @@
    <class>QwtPlot</class>
    <extends>QFrame</extends>
    <header>qwt_plot.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

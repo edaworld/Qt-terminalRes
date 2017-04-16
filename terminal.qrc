@@ -11,5 +11,6 @@
         <file>images/history.ico</file>
         <file>images/excel.ico</file>
         <file>images/return.png</file>
+        <file>images/calibration.ico</file>
     </qresource>
 </RCC>

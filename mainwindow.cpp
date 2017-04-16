@@ -39,6 +39,8 @@
 #include <QMessageBox>
 #include <QLabel>
 #include <QtSerialPort/QSerialPort>
+#include <QMessageBox>
+
 
 #define TIMELENGTH 300
 double times[TIMELENGTH];//坐标x轴数组
@@ -153,6 +155,20 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->qwtPlot_mainwin->replot();
     ui->qwtPlot_mainwin->setAutoReplot( true );//设置自动重画，相当于更新
 
+
+    this->displayCurveFlag = 0;//默认不显示曲线
+
+    QPalette pal( Qt::red );
+    pal.setColor( QPalette::WindowText, Qt::green );
+
+    ui->liEdt_Calbra->setText("10000");//设置默认值
+    ui->liEdt_Calbra->setAlignment(Qt::AlignHCenter);
+    ui->liEdt_Calbra->setPalette(pal);
+    ui->liEdt_Calbra->setText("------");
+
+    //校准后开启下面两个按钮
+    ui->btnConnect->setEnabled(false);
+    ui->btnHistory->setEnabled(false);
 }
 
 void MainWindow::btnConfigProcess()
@@ -192,8 +208,9 @@ void MainWindow::openSerialPort()
         showStatusMessage(tr("打开错误"));
     }
     connect(mainwin,&MainWindow::notifyhiswin,historywin,&HisMainWin::insAndupdatetblview);//建立串口notify信号和HisMainWin串口的tableview数据库槽函数连接
-//    connect(mainwin,&MainWindow::notifycurwin,curvewgt,&CurvWidget::insAndupdatecurve);//建立串口notify信号和curvewgt的曲线图的连接
     connect(mainwin,&MainWindow::notifywinUpdatecurv,mainwin,&MainWindow::updatecurve);//建立串口notify信号和mainwin上面的曲线图的连接
+
+//    connect(mainwin,&MainWindow::notifycurwin,curvewgt,&CurvWidget::insAndupdatecurve);//建立串口notify信号和curvewgt的曲线图的连接
 }
 //关闭串口响应槽函数
 void MainWindow::closeSerialPort()
@@ -218,17 +235,20 @@ void MainWindow::writeData(const QByteArray &data)
 {
     serial->write(data);
 }
-//读取串口数据，这里仅仅实现数据的拷贝，为了节省时间，显示任务放到processrevdata槽函数中
+
 static quint64 yaxis[10];
 static quint8 countofYaxis;
 static quint64 sum;
+//读取串口数据，这里仅仅实现数据的拷贝，为了节省时间，显示任务放到processrevdata槽函数中
+quint32 sumofRe;
+quint32 sumofIm;
 void MainWindow::readData()
 {
     quint32 rcvtemp;//暂存实部数据
     quint32 imtemp;//暂存虚部数据
+
     QByteArray dataReadAll = serial->readAll();
-    quint32 sumofRe;
-    quint32 sumofIm;
+
 
 //    qDebug("read data size is %d,count is %d",dataReadAll.size(),dataReadAll.count());
     char temp0[1],temp1[1],temp2[1],temp3[1],temp4[1],temp5[1],temp6[1],temp7[1];
@@ -269,7 +289,7 @@ void MainWindow::readData()
          sumofRe+= rcvtemp;
          ReofRecv = sumofRe;
 //         qDebug("%d",ReofRecv);
-         qDebug("Re is %X",ReofRecv);
+//         qDebug("Re is %X",ReofRecv);
 
 
          yaxis[countofYaxis]=ReofRecv;
@@ -286,45 +306,52 @@ void MainWindow::readData()
 
          sumofIm=0;
          temp4[0]=(quint8)temp.at(7);
-         rcvtemp = strtol(temp4,NULL,16);
-         sumofIm+= rcvtemp*4096;
+         imtemp = strtol(temp4,NULL,16);
+         sumofIm+= imtemp*4096;
 
          temp5[0]=(quint8)temp.at(8);
-         rcvtemp = strtol(temp5,NULL,16);
-         sumofIm+= rcvtemp*256;
+         imtemp = strtol(temp5,NULL,16);
+         sumofIm+= imtemp*256;
 
          temp6[0]=(quint8)temp.at(9);
-         rcvtemp = strtol(temp6,NULL,16);
-         sumofIm+= rcvtemp*16;
+         imtemp = strtol(temp6,NULL,16);
+         sumofIm+= imtemp*16;
 
          temp7[0]=(quint8)temp.at(10);
-         rcvtemp = strtol(temp7,NULL,16);
-         sumofIm+= rcvtemp;
+         imtemp = strtol(temp7,NULL,16);
+         sumofIm+= imtemp;
          ImofRecv = sumofIm;
 //         qDebug("Im is %d",ImofRecv);
-         qDebug("Im is %X",ImofRecv);
+//         qDebug("read data Im is %X",ImofRecv);
+         this->realtimeRange = sqrt((double)ReofRecv*(double)ReofRecv+(double)ImofRecv*(double)ImofRecv);
+
 
      }
-     emit isReceiveData();//发送信号，通知processrevdata槽函数处理数据
+     if(displayCurveFlag == 1)//校准完毕再显示数据
+     {
+         emit isReceiveData();//发送信号，通知processrevdata槽函数处理数据
+     }
+     emit startCalibrate();//发送开始校准信号，通知calibrateProcess槽函数处理数据
 }
 static qint64 count1;//统计第1通道接收数据个数变量
 static qint64 count2;//统计第2通道接收数据个数变量
 static qint64 count3;//统计第3通道接收数据个数变量
 void MainWindow::processrevdata()//响应isReceiveData信号的处理数据槽函数
 {
-
-    ui->lcdNumber1->display((double)this->ReofRecv/1000);
+    this->realResValue = ui->liEdt_Calbra->text().toDouble()*this->realtimeRange/this->gainFactor;
+    ui->lcdNumber1->display((double)this->realResValue/1000);
     count1++;
 
-    ImofRecv = ImofRecv * (-1);
-    ui->lcdNumber2->display((double)ImofRecv/1000);
-    count2++;
+//    ImofRecv = ImofRecv * (-1);
+//    ui->lcdNumber2->display((double)ImofRecv/1000);
+//    count2++;
 
 //    ui->lcdNumber3->display(dataReadBuffer[2].Heartdata);
-    count3++;
+//    count3++;
+
+//    emit notifycurwin();//通知curve更新数据
 
     emit notifyhiswin();//通知tableview更新数据
-//    emit notifycurwin();//通知curve更新数据
     emit notifywinUpdatecurv();//通知mainwin更新曲线数据
 }
 static qint32 count;//串口接收到数据的计数器
@@ -336,11 +363,11 @@ void MainWindow::updatecurve()
         count = TIMELENGTH-1;
         for (i = 0; i < TIMELENGTH;i++)
         {
-            valofRe[i] = valofRe[i+1];//将曲线1的心率数据数组前移一位
-//            val2[i] = val2[i+1];//将曲线2的心率数据数组前移一位
+            valofRe[i] = valofRe[i+1];//将曲线1的数据数组前移一位
+//            val2[i] = val2[i+1];//将曲线2的数据数组前移一位
         }
     }
-    valofRe[count] = mainwin->ReofRecv;//设置心率1的数据
+    valofRe[count] = mainwin->realResValue;//设置数据
 //    val2[count] = mainwin->dataReadBuffer[1].Heartdata;//设置心率2的数据
     count++;
 
@@ -441,11 +468,7 @@ void MainWindow::on_btnHistory_clicked()
     historywin->show();
 }
 
-void MainWindow::on_btnCurve_clicked()
-{
-//    this->hide();
-//    curvewgt->show();
-}
+
 
 void MainWindow::on_btnExit_clicked()
 {
@@ -487,7 +510,94 @@ void MainWindow::on_btnSet_clicked()
     this->btnConfigProcess();
 }
 
+
+
+//校准按钮单机事件响应函数
+void MainWindow::on_btnCalibra_clicked()
+{
+    if(ui->liEdt_Calbra->text() == "------")
+    {
+        QMessageBox msgBox;
+        msgBox.setText("请输入校准电阻值！");
+        msgBox.exec();
+        return;
+    }
+    this->openSerialPort();
+    connect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);
+//    connect(mainwin,&MainWindow::notifywinUpdatecurv,mainwin,&MainWindow::updatecurve);//建立串口notify信号和mainwin上面的曲线图的连接
+
+}
+
+static quint64 calibraReArray[100];
+static quint8 cntRe=0;
+static quint64 sumofReCalibra;
+static quint64 avgRe;
+
+static quint64 calibraImArray[100];
+static quint8 cntIm=0;
+static quint64 sumofImCalibra;
+static quint64 avgIm;
+
+void MainWindow::calibrateProcess()
+{
+    this->displayCurveFlag = 0;//一旦进入校准程序，曲线默认不显示
+
+    calibraReArray[cntRe]=ReofRecv;
+    cntRe++;
+    if(cntRe == 100)
+    {
+        for(int i=0;i<100;i++)
+            sumofReCalibra +=calibraReArray[i];
+        avgRe = sumofReCalibra/100;
+//        cntRe = 0;
+        sumofReCalibra = 0;
+    }
+
+    calibraImArray[cntIm]=this->ImofRecv;
+    qDebug("Im is %X",this->ImofRecv);
+    cntIm++;
+    if(cntIm == 100)
+    {
+        for(int i=0;i<100;i++)
+            sumofImCalibra +=calibraImArray[i];
+        avgIm = sumofImCalibra/100;
+//        cntIm = 0;
+        sumofImCalibra = 0;
+    }
+
+    if((cntRe == 100) && (cntIm == 100))
+    {
+        double retemp,imtemp;
+        retemp=(double)avgRe;
+        qDebug("retemp is %f",retemp);
+        imtemp=(double)avgIm;
+        qDebug("imtemp is %f",imtemp);
+
+        gainFactor = sqrt(retemp*retemp + imtemp*imtemp);
+        disconnect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);
+        this->closeSerialPort();
+        qDebug("gain factor is %f",this->gainFactor);
+
+        cntRe = 0;
+        cntIm = 0;
+
+        this->displayCurveFlag = 1;//校准完毕，置位显示标志位
+        ui->btnConnect->setEnabled(true);
+        ui->btnHistory->setEnabled(true);
+
+    }
+}
+
+
+
 //void MainWindow::on_btnHelp_clicked()
 //{
 
 //}
+
+//void MainWindow::on_btnCurve_clicked()
+//{
+//    this->hide();
+//    curvewgt->show();
+//}
+

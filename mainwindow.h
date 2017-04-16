@@ -109,10 +109,16 @@ public:
     quint8 ReofRes[4];//电阻抗实部
     quint8 ImofRes[4];//电阻抗虚部
 
+
     QByteArray temp;//暂存串口接收到的数据，凑足12个字节
     quint32 ReofRecv;//接收数据的实部
     quint32 ImofRecv;//接收数据的虚部
 
+    double gainFactor;//增益系数
+    double realtimeRange;//实施计算的幅度
+    quint8 displayCurveFlag;//是否显示曲线的标志位
+
+    double realResValue;//真实计算出的阻值
 
     STATUSFLAG statusFlag;
     Ui::MainWindow *ui;
@@ -123,6 +129,12 @@ private slots:
     void about();
     void writeData(const QByteArray &data);
     void readData();
+    void timeoutdisplay();
+    void processrevdata();
+    void updatecurve();
+    void calibrateProcess();
+
+
 
     void btnConfigProcess();
 
@@ -130,13 +142,9 @@ private slots:
 
     void on_btnHistory_clicked();
 
-    void on_btnCurve_clicked();
+//    void on_btnCurve_clicked();
 
     void on_btnExit_clicked();
-
-    void timeoutdisplay();
-    void processrevdata();
-    void updatecurve();
 
     void on_btnConnect_clicked();
 
@@ -146,11 +154,14 @@ private slots:
 
 //    void on_btnHelp_clicked();
 
+    void on_btnCalibra_clicked();
+
 signals:
     void isReceiveData(void);
     void notifyhiswin(void);//测试信号，通知hismainwin的槽函数
     void notifycurwin(void);//信号，通知curvewgt的槽函数
     void notifywinUpdatecurv(void);
+    void startCalibrate(void);//开始校准，获得增益系数信号
 
 private:
     void initActionsConnections();

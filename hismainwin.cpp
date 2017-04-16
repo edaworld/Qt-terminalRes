@@ -144,16 +144,16 @@ void HisMainWin::insAndupdatetblview()
     QString currentDate = dt.toString("yyyy:MM:dd:hh:mm:ss"); //采用一定的格式保存时间日期
 
     QSqlField f1("ch1", QVariant::Int);
-    QSqlField f2("ch2", QVariant::Int);
+//    QSqlField f2("ch2", QVariant::Int);
     QSqlField f9("datetime", QVariant::DateTime);
 
-    f1.setValue(mainwin->ReofRecv);
-    f2.setValue(mainwin->ImofRecv);
+    f1.setValue(mainwin->realResValue);
+//    f2.setValue(mainwin->ImofRecv);
 
 
     f9.setValue(QVariant(currentDate));
     record.append(f1);
-    record.append(f2);
+//    record.append(f2);
     record.append(f9);
 
     model->insertRecord(-1, record);
