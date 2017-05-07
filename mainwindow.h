@@ -132,7 +132,7 @@ private slots:
     void timeoutdisplay();
     void processrevdata();
     void updatecurve();
-    void calibrateProcess();
+    void calibrateProcess();//校准槽函数
 
 
 
@@ -154,14 +154,14 @@ private slots:
 
 //    void on_btnHelp_clicked();
 
-    void on_btnCalibra_clicked();
+    void on_btnCalibra_clicked();//校准按钮槽函数
 
 signals:
     void isReceiveData(void);
     void notifyhiswin(void);//测试信号，通知hismainwin的槽函数
     void notifycurwin(void);//信号，通知curvewgt的槽函数
     void notifywinUpdatecurv(void);
-    void startCalibrate(void);//开始校准，获得增益系数信号
+    void startCalibrate(void);//开始校准，获得增益系数信号，与calibrateProcess连接
 
 private:
     void initActionsConnections();
@@ -182,18 +182,14 @@ private:
     DATAPACKGE *dataReadPackge;
     RESPACKGE *resReadPackge;
 
-
-
-
     QwtPlotCurve *p_curve;
-
     QwtInterval *p_interval;
     QwtPlotGrid *p_grid;
     QwtPlotCanvas *p_canvas;
 
 
 
-    QTimer *timer;//
+    QTimer *timer;//测试是否断线，超时的定时器
 //    QTime *time;
 };
 

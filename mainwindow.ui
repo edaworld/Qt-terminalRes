@@ -244,6 +244,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="smallDecimalPoint">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item>

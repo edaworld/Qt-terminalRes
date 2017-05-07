@@ -75,8 +75,8 @@ MainWindow::MainWindow(QWidget *parent) :
 //    ui->menuBar->clear();//标题栏
     ui->mainToolBar->clear();//工具栏
 
-    timer = new QTimer();
 //    time = new QTime();
+    timer = new QTimer();
     timer->setInterval(3000);
     timer->start();
 
@@ -158,15 +158,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->displayCurveFlag = 0;//默认不显示曲线
 
-    QPalette pal( Qt::red );
-    pal.setColor( QPalette::WindowText, Qt::green );
-
-    ui->liEdt_Calbra->setText("10000");//设置默认值
+    ui->liEdt_Calbra->setStyleSheet("color: blue;"
+                                    "background-color: yellow;"
+                                    "selection-color: yellow;"
+                                    "selection-background-color: blue;");
     ui->liEdt_Calbra->setAlignment(Qt::AlignHCenter);
-    ui->liEdt_Calbra->setPalette(pal);
-    ui->liEdt_Calbra->setText("------");
+    ui->liEdt_Calbra->setText("------");//设置默认值
 
-    //校准后开启下面两个按钮
+    //校准后再开启下面两个按钮
     ui->btnConnect->setEnabled(false);
     ui->btnHistory->setEnabled(false);
 }
@@ -240,58 +239,66 @@ static quint64 yaxis[10];
 static quint8 countofYaxis;
 static quint64 sum;
 //读取串口数据，这里仅仅实现数据的拷贝，为了节省时间，显示任务放到processrevdata槽函数中
-quint32 sumofRe;
-quint32 sumofIm;
+qint32 sumofRe;
+qint32 sumofIm;
 void MainWindow::readData()
 {
     quint32 rcvtemp;//暂存实部数据
     quint32 imtemp;//暂存虚部数据
 
     QByteArray dataReadAll = serial->readAll();
-
-
 //    qDebug("read data size is %d,count is %d",dataReadAll.size(),dataReadAll.count());
     char temp0[1],temp1[1],temp2[1],temp3[1],temp4[1],temp5[1],temp6[1],temp7[1];
      if(dataReadAll.at(0) == '$')
      {
          temp.clear();
      }
+     else
+     {
+         return;
+     }
      temp.append(dataReadAll.data(),dataReadAll.size());
-     if(temp.size() == 14)
+     if(temp.size() == 10)
      {
 
+//         qDebug("temp1 is %c",(quint8)temp.at(1));
 //         qDebug("temp2 is %c",(quint8)temp.at(2));
 //         qDebug("temp3 is %c",(quint8)temp.at(3));
 //         qDebug("temp4 is %c",(quint8)temp.at(4));
 //         qDebug("temp5 is %c",(quint8)temp.at(5));
-//         qDebug("temp4 is %c",(quint8)temp.at(7));
-//         qDebug("temp4 is %c",(quint8)temp.at(8));
-//         qDebug("temp4 is %c",(quint8)temp.at(9));
-//         qDebug("temp4 is %c",(quint8)temp.at(10));
+//         qDebug("temp6 is %c",(quint8)temp.at(6));
+//         qDebug("temp7 is %c",(quint8)temp.at(7));
+//         qDebug("temp8 is %c",(quint8)temp.at(8));
+
 
          sumofRe=0;
-         temp0[0]=(quint8)temp.at(2);
+
+         temp0[0]=(qint8)temp.at(1);
          rcvtemp = strtol(temp0,NULL,16);
-         sumofRe+= rcvtemp*4096;
+         sumofRe |= ((rcvtemp<<12) & 0x0000F000);
+//         sumofRe+= rcvtemp*4096;
 
-         temp1[0]=(quint8)temp.at(3);
+         temp1[0]=(qint8)temp.at(2);
          rcvtemp = strtol(temp1,NULL,16);
-         sumofRe+= rcvtemp*256;
+         sumofRe |= ((rcvtemp<<8) & 0x00000F00);
+//         sumofRe+= rcvtemp*256;
 
 
 
-         temp2[0]=(quint8)temp.at(4);
+         temp2[0]=(qint8)temp.at(3);
          rcvtemp = strtol(temp2,NULL,16);
-         sumofRe+= rcvtemp*16;
+         sumofRe |= ((rcvtemp<<4) & 0x000000F0);
+//         sumofRe+= rcvtemp*16;
 
-         temp3[0]=(quint8)temp.at(5);
+         temp3[0]=(qint8)temp.at(4);
          rcvtemp = strtol(temp3,NULL,16);
-         sumofRe+= rcvtemp;
+         sumofRe |= ((rcvtemp<<0) & 0x0000000F);
+//         sumofRe+= rcvtemp;
          ReofRecv = sumofRe;
 //         qDebug("%d",ReofRecv);
 //         qDebug("Re is %X",ReofRecv);
 
-
+        //以下是设置坐标轴y轴最大值的代码
          yaxis[countofYaxis]=ReofRecv;
          countofYaxis++;
          if(countofYaxis == 5)
@@ -305,26 +312,30 @@ void MainWindow::readData()
          }
 
          sumofIm=0;
-         temp4[0]=(quint8)temp.at(7);
+         temp4[0]=(qint8)temp.at(5);
          imtemp = strtol(temp4,NULL,16);
-         sumofIm+= imtemp*4096;
+         sumofIm |= ((imtemp<<12) & 0x0000F000);
+//         sumofIm+= imtemp*4096;
 
-         temp5[0]=(quint8)temp.at(8);
+         temp5[0]=(qint8)temp.at(6);
          imtemp = strtol(temp5,NULL,16);
-         sumofIm+= imtemp*256;
+         sumofIm |= ((imtemp<<8) & 0x00000F00);
+//         sumofIm+= imtemp*256;
 
-         temp6[0]=(quint8)temp.at(9);
+         temp6[0]=(qint8)temp.at(7);
          imtemp = strtol(temp6,NULL,16);
-         sumofIm+= imtemp*16;
+         sumofIm |= ((imtemp<<4) & 0x000000F0);
+//         sumofIm+= imtemp*16;
 
-         temp7[0]=(quint8)temp.at(10);
+         temp7[0]=(qint8)temp.at(8);
          imtemp = strtol(temp7,NULL,16);
-         sumofIm+= imtemp;
+         sumofIm = ((imtemp<<0) & 0x0000000F);
+//         sumofIm+= imtemp;
          ImofRecv = sumofIm;
 //         qDebug("Im is %d",ImofRecv);
-//         qDebug("read data Im is %X",ImofRecv);
+//         qDebug("Im is %X",ImofRecv);
          this->realtimeRange = sqrt((double)ReofRecv*(double)ReofRecv+(double)ImofRecv*(double)ImofRecv);
-
+//        qDebug("realtimeRange is %f",realtimeRange);
 
      }
      if(displayCurveFlag == 1)//校准完毕再显示数据
@@ -334,12 +345,19 @@ void MainWindow::readData()
      emit startCalibrate();//发送开始校准信号，通知calibrateProcess槽函数处理数据
 }
 static qint64 count1;//统计第1通道接收数据个数变量
-static qint64 count2;//统计第2通道接收数据个数变量
-static qint64 count3;//统计第3通道接收数据个数变量
+//static qint64 count2;//统计第2通道接收数据个数变量
+//static qint64 count3;//统计第3通道接收数据个数变量
 void MainWindow::processrevdata()//响应isReceiveData信号的处理数据槽函数
 {
     this->realResValue = ui->liEdt_Calbra->text().toDouble()*this->realtimeRange/this->gainFactor;
-    ui->lcdNumber1->display((double)this->realResValue/1000);
+//    qDebug("liEdt_Calbra is %f",ui->liEdt_Calbra->text().toDouble());
+//    qDebug("realtimeRange is %f",realtimeRange);
+//    qDebug("this->gainFactor is %f",this->gainFactor);
+//    qDebug("realResValue is %f",realResValue);
+//    QString str = QString("%1").arg(this->realResValue,0,'f',1);
+    ui->lcdNumber1->display(this->realResValue/1000);
+
+
     count1++;
 
 //    ImofRecv = ImofRecv * (-1);
@@ -349,9 +367,7 @@ void MainWindow::processrevdata()//响应isReceiveData信号的处理数据槽�
 //    ui->lcdNumber3->display(dataReadBuffer[2].Heartdata);
 //    count3++;
 
-//    emit notifycurwin();//通知curve更新数据
-
-    emit notifyhiswin();//通知tableview更新数据
+    emit notifyhiswin();//通知hismainwin窗体的tableview更新数据，并更新数据库
     emit notifywinUpdatecurv();//通知mainwin更新曲线数据
 }
 static qint32 count;//串口接收到数据的计数器
@@ -364,15 +380,12 @@ void MainWindow::updatecurve()
         for (i = 0; i < TIMELENGTH;i++)
         {
             valofRe[i] = valofRe[i+1];//将曲线1的数据数组前移一位
-//            val2[i] = val2[i+1];//将曲线2的数据数组前移一位
         }
     }
     valofRe[count] = mainwin->realResValue;//设置数据
-//    val2[count] = mainwin->dataReadBuffer[1].Heartdata;//设置心率2的数据
     count++;
 
     p_curve->setSamples(times,valofRe,count);
-//    p_curve->setSamples(time,val2,count);
 
     ui->qwtPlot_mainwin->replot();//重绘数据
 }
@@ -381,7 +394,7 @@ void MainWindow::timeoutdisplay()//超时检测槽函数
 {
     static qint64 no1oldnum,no1newnum;
     static qint64 no2oldnum,no2newnum;
-    static qint64 no3oldnum,no3newnum;
+//    static qint64 no3oldnum,no3newnum;
 
     //计算是否掉线
     no1oldnum = no1newnum;
@@ -391,26 +404,27 @@ void MainWindow::timeoutdisplay()//超时检测槽函数
         ui->lcdNumber1->display(tr("------"));
     }
     //计算是否掉线
-    no2oldnum = no2newnum;
-    no2newnum = count2;
-    if(no2oldnum == no2newnum)
-    {
-        ui->lcdNumber2->display(tr("------"));
-    }
+//    no2oldnum = no2newnum;
+//    no2newnum = count2;
+//    if(no2oldnum == no2newnum)
+//    {
+//        ui->lcdNumber2->display(tr("------"));
+//    }
     //计算是否掉线
-    no3oldnum = no3newnum;
-    no3newnum = count3;
-    if(no3oldnum == no3newnum)
-    {
+//    no3oldnum = no3newnum;
+//    no3newnum = count3;
+//    if(no3oldnum == no3newnum)
+//    {
 //        ui->lcdNumber3->display(tr("------"));
 //        ui->ThermoBP3->setValue(0);
 //        ui->ThermoHP3->setValue(0);
-    }
+//    }
 }
 
 void MainWindow::handleError(QSerialPort::SerialPortError error)
 {
-    if (error == QSerialPort::ResourceError) {
+    if (error == QSerialPort::ResourceError)
+    {
         QMessageBox::critical(this, tr("Critical Error"), serial->errorString());
         closeSerialPort();
     }
@@ -438,6 +452,7 @@ void MainWindow::initLcdNumbers()
 //    ui->lcdNumber1->setFocusPolicy( Qt::WheelFocus );
     ui->lcdNumber1->setPalette( pal );
     ui->lcdNumber1->display(tr("------"));
+
 
     ui->lcdNumber2->setSegmentStyle( QLCDNumber::Filled );
     ui->lcdNumber2->setAutoFillBackground( true );
@@ -510,21 +525,16 @@ void MainWindow::on_btnSet_clicked()
     this->btnConfigProcess();
 }
 
-
-
 //校准按钮单机事件响应函数
 void MainWindow::on_btnCalibra_clicked()
 {
-    if(ui->liEdt_Calbra->text() == "------")
+    if(ui->liEdt_Calbra->text() == "------")//用户没有输入校准电阻
     {
-        QMessageBox msgBox;
-        msgBox.setText("请输入校准电阻值！");
-        msgBox.exec();
+        QMessageBox::critical(this, tr("提醒"),tr("<b>请输入校准电阻值，再单击本按钮</b>"));
         return;
     }
     this->openSerialPort();
-    connect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);
-//    connect(mainwin,&MainWindow::notifywinUpdatecurv,mainwin,&MainWindow::updatecurve);//建立串口notify信号和mainwin上面的曲线图的连接
+    connect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);//打开串口后，有数据接收，通知校准槽函数，接收校准数据
 
 }
 
@@ -549,19 +559,16 @@ void MainWindow::calibrateProcess()
         for(int i=0;i<100;i++)
             sumofReCalibra +=calibraReArray[i];
         avgRe = sumofReCalibra/100;
-//        cntRe = 0;
         sumofReCalibra = 0;
     }
 
     calibraImArray[cntIm]=this->ImofRecv;
-    qDebug("Im is %X",this->ImofRecv);
     cntIm++;
     if(cntIm == 100)
     {
         for(int i=0;i<100;i++)
             sumofImCalibra +=calibraImArray[i];
         avgIm = sumofImCalibra/100;
-//        cntIm = 0;
         sumofImCalibra = 0;
     }
 
@@ -569,14 +576,11 @@ void MainWindow::calibrateProcess()
     {
         double retemp,imtemp;
         retemp=(double)avgRe;
-        qDebug("retemp is %f",retemp);
         imtemp=(double)avgIm;
-        qDebug("imtemp is %f",imtemp);
-
         gainFactor = sqrt(retemp*retemp + imtemp*imtemp);
         disconnect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);
         this->closeSerialPort();
-        qDebug("gain factor is %f",this->gainFactor);
+        qDebug("gain factor is %f",this->gainFactor*ui->liEdt_Calbra->text().toDouble());
 
         cntRe = 0;
         cntIm = 0;
