@@ -109,7 +109,6 @@ public:
     quint8 ReofRes[4];//电阻抗实部
     quint8 ImofRes[4];//电阻抗虚部
 
-
     QByteArray temp;//暂存串口接收到的数据，凑足12个字节
     quint32 ReofRecv;//接收数据的实部
     quint32 ImofRecv;//接收数据的虚部
@@ -133,8 +132,6 @@ private slots:
     void processrevdata();
     void updatecurve();
     void calibrateProcess();//校准槽函数
-
-
 
     void btnConfigProcess();
 
@@ -186,8 +183,6 @@ private:
     QwtInterval *p_interval;
     QwtPlotGrid *p_grid;
     QwtPlotCanvas *p_canvas;
-
-
 
     QTimer *timer;//测试是否断线，超时的定时器
 //    QTime *time;

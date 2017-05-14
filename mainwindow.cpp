@@ -47,7 +47,6 @@ double times[TIMELENGTH];//坐标x轴数组
 double valofRe[TIMELENGTH];//节点1坐标y轴数组
 double valofIM[TIMELENGTH];//节点2坐标y轴数组
 
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -62,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
     serial = new QSerialPort(this);
     settings = new SettingsDialog;
 
-//以下为设置按钮状态
+    //以下为设置按钮状态
     ui->actionConnect->setEnabled(true);
     ui->btnConnect->setEnabled(true);
     ui->actionDisconnect->setEnabled(false);
@@ -155,9 +154,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->qwtPlot_mainwin->replot();
     ui->qwtPlot_mainwin->setAutoReplot( true );//设置自动重画，相当于更新
 
-
     this->displayCurveFlag = 0;//默认不显示曲线
 
+    //以下代码设置校准框显示
     ui->liEdt_Calbra->setStyleSheet("color: blue;"
                                     "background-color: yellow;"
                                     "selection-color: yellow;"
@@ -180,7 +179,13 @@ MainWindow::~MainWindow()
     delete settings;
     delete ui;
 }
-//打开串口响应槽函数
+/***********************************************************************
+*   函 数 名: openSerialPort
+*   功能说明: open串口响应的槽函数
+*   注    意：连接了两个槽函数
+*             一个是通知hisMainWin历史数据窗体更新tableview
+*             一个是通知MainWindow窗体更新曲线
+***********************************************************************/
 void MainWindow::openSerialPort()
 {
     SettingsDialog::Settings p = settings->settings();
@@ -206,12 +211,13 @@ void MainWindow::openSerialPort()
 
         showStatusMessage(tr("打开错误"));
     }
-    connect(mainwin,&MainWindow::notifyhiswin,historywin,&HisMainWin::insAndupdatetblview);//建立串口notify信号和HisMainWin串口的tableview数据库槽函数连接
+    connect(mainwin,&MainWindow::notifyhiswin,historywin,&HisMainWin::insAndupdatetblview);//建立串口notify信号和HisMainWin窗体串口的tableview数据库槽函数连接
     connect(mainwin,&MainWindow::notifywinUpdatecurv,mainwin,&MainWindow::updatecurve);//建立串口notify信号和mainwin上面的曲线图的连接
-
-//    connect(mainwin,&MainWindow::notifycurwin,curvewgt,&CurvWidget::insAndupdatecurve);//建立串口notify信号和curvewgt的曲线图的连接
 }
-//关闭串口响应槽函数
+/***********************************************************************
+*   函 数 名: closeSerialPort
+*   功能说明: 关闭串口响应槽函数
+***********************************************************************/
 void MainWindow::closeSerialPort()
 {
     if (serial->isOpen())
@@ -224,23 +230,38 @@ void MainWindow::closeSerialPort()
     ui->btnSet->setEnabled(true);
     showStatusMessage(tr("断开"));
 }
-//帮助按钮响应槽函数
+/***********************************************************************
+*   函 数 名: about
+*   功能说明:帮助按钮响应槽函数
+***********************************************************************/
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("程序功能"),tr("<b>本程序从心率带主机接收数据，然后进行显示</b>"));
 }
-//将数据写入串口
+/***********************************************************************
+*   函 数 名: writeData
+*   功能说明: 写数据到串口，目前软件中尚未使用
+*   注    意：
+***********************************************************************/
 void MainWindow::writeData(const QByteArray &data)
 {
     serial->write(data);
 }
-
+/***********************************************************************
+*   函 数 名:readData
+*   功能说明:串口收到数据后的响应槽函数，对应信号是QSerialPort::readyRead
+*   注    意:下位机发送的数据是10个字节，包头为$,2~5组成实部，6~9组成虚部，
+*            在此函数中计算出Magnitude=sqrt(实部平方+虚部平方)
+*            ReofRecv接收数据的实部
+*            ImofRecv接收数据的虚部
+*            realtimeRange计算的幅度=Magnitude
+***********************************************************************/
 static quint64 yaxis[10];
 static quint8 countofYaxis;
 static quint64 sum;
 //读取串口数据，这里仅仅实现数据的拷贝，为了节省时间，显示任务放到processrevdata槽函数中
-qint32 sumofRe;
-qint32 sumofIm;
+qint32 sumofRe;//实部加和
+qint32 sumofIm;//虚部加和
 void MainWindow::readData()
 {
     quint32 rcvtemp;//暂存实部数据
@@ -249,127 +270,169 @@ void MainWindow::readData()
     QByteArray dataReadAll = serial->readAll();
 //    qDebug("read data size is %d,count is %d",dataReadAll.size(),dataReadAll.count());
     char temp0[1],temp1[1],temp2[1],temp3[1],temp4[1],temp5[1],temp6[1],temp7[1];
-     if(dataReadAll.at(0) == '$')
-     {
-         temp.clear();
-     }
-     else
-     {
-         return;
-     }
-     temp.append(dataReadAll.data(),dataReadAll.size());
-     if(temp.size() == 10)
-     {
+    if(dataReadAll.at(0) == '$')//判断包头是否正确
+    {
+        temp.clear();
+    }
+    else
+    {
+        return;
+    }
+    temp.append(dataReadAll.data(),dataReadAll.size());//将数据添加至temp
+    if(temp.size() == 10)//只有完整的10个字节的数据包才处理
+    {
 
-//         qDebug("temp1 is %c",(quint8)temp.at(1));
-//         qDebug("temp2 is %c",(quint8)temp.at(2));
-//         qDebug("temp3 is %c",(quint8)temp.at(3));
-//         qDebug("temp4 is %c",(quint8)temp.at(4));
-//         qDebug("temp5 is %c",(quint8)temp.at(5));
-//         qDebug("temp6 is %c",(quint8)temp.at(6));
-//         qDebug("temp7 is %c",(quint8)temp.at(7));
-//         qDebug("temp8 is %c",(quint8)temp.at(8));
+//        qDebug("temp1 is %c",(quint8)temp.at(1));
+//        qDebug("temp2 is %c",(quint8)temp.at(2));
+//        qDebug("temp3 is %c",(quint8)temp.at(3));
+//        qDebug("temp4 is %c",(quint8)temp.at(4));
+//        qDebug("temp5 is %c",(quint8)temp.at(5));
+//        qDebug("temp6 is %c",(quint8)temp.at(6));
+//        qDebug("temp7 is %c",(quint8)temp.at(7));
+//        qDebug("temp8 is %c",(quint8)temp.at(8));
 
+        //以下代码计算实部
+        sumofRe=0;
+        temp0[0]=(qint8)temp.at(1);
+        rcvtemp = strtol(temp0,NULL,16);
+        sumofRe |= ((rcvtemp<<12) & 0x0000F000);
+//        sumofRe+= rcvtemp*4096;
 
-         sumofRe=0;
+        temp1[0]=(qint8)temp.at(2);
+        rcvtemp = strtol(temp1,NULL,16);
+        sumofRe |= ((rcvtemp<<8) & 0x00000F00);
+//        sumofRe+= rcvtemp*256;
 
-         temp0[0]=(qint8)temp.at(1);
-         rcvtemp = strtol(temp0,NULL,16);
-         sumofRe |= ((rcvtemp<<12) & 0x0000F000);
-//         sumofRe+= rcvtemp*4096;
+        temp2[0]=(qint8)temp.at(3);
+        rcvtemp = strtol(temp2,NULL,16);
+        sumofRe |= ((rcvtemp<<4) & 0x000000F0);
+//        sumofRe+= rcvtemp*16;
 
-         temp1[0]=(qint8)temp.at(2);
-         rcvtemp = strtol(temp1,NULL,16);
-         sumofRe |= ((rcvtemp<<8) & 0x00000F00);
-//         sumofRe+= rcvtemp*256;
+        temp3[0]=(qint8)temp.at(4);
+        rcvtemp = strtol(temp3,NULL,16);
+        sumofRe |= ((rcvtemp<<0) & 0x0000000F);
+//        sumofRe+= rcvtemp;
+        this->ReofRecv = sumofRe;
+//        qDebug("%d",ReofRecv);
+//        qDebug("Re is %X",ReofRecv);
 
+        //以下代码计算虚部
+        sumofIm=0;
+        temp4[0]=(qint8)temp.at(5);
+        imtemp = strtol(temp4,NULL,16);
+        sumofIm |= ((imtemp<<12) & 0x0000F000);
+//        sumofIm+= imtemp*4096;
 
+        temp5[0]=(qint8)temp.at(6);
+        imtemp = strtol(temp5,NULL,16);
+        sumofIm |= ((imtemp<<8) & 0x00000F00);
+//        sumofIm+= imtemp*256;
 
-         temp2[0]=(qint8)temp.at(3);
-         rcvtemp = strtol(temp2,NULL,16);
-         sumofRe |= ((rcvtemp<<4) & 0x000000F0);
-//         sumofRe+= rcvtemp*16;
+        temp6[0]=(qint8)temp.at(7);
+        imtemp = strtol(temp6,NULL,16);
+        sumofIm |= ((imtemp<<4) & 0x000000F0);
+//        sumofIm+= imtemp*16;
 
-         temp3[0]=(qint8)temp.at(4);
-         rcvtemp = strtol(temp3,NULL,16);
-         sumofRe |= ((rcvtemp<<0) & 0x0000000F);
-//         sumofRe+= rcvtemp;
-         ReofRecv = sumofRe;
-//         qDebug("%d",ReofRecv);
-//         qDebug("Re is %X",ReofRecv);
+        temp7[0]=(qint8)temp.at(8);
+        imtemp = strtol(temp7,NULL,16);
+        sumofIm = ((imtemp<<0) & 0x0000000F);
+//        sumofIm+= imtemp;
+        this->ImofRecv = sumofIm;
+//        qDebug("Im is %d",ImofRecv);
+//        qDebug("Im is %X",ImofRecv);
 
-        //以下是设置坐标轴y轴最大值的代码
-         yaxis[countofYaxis]=ReofRecv;
-         countofYaxis++;
-         if(countofYaxis == 5)
-         {
-             for(int i=0;i<5;i++)
-                 sum +=yaxis[i];
-             sum = sum/5;
-             ui->qwtPlot_mainwin->setAxisScale( QwtPlot::yLeft, 0, sum*2);
-             countofYaxis = 0;
-             sum = 0;
-         }
-
-         sumofIm=0;
-         temp4[0]=(qint8)temp.at(5);
-         imtemp = strtol(temp4,NULL,16);
-         sumofIm |= ((imtemp<<12) & 0x0000F000);
-//         sumofIm+= imtemp*4096;
-
-         temp5[0]=(qint8)temp.at(6);
-         imtemp = strtol(temp5,NULL,16);
-         sumofIm |= ((imtemp<<8) & 0x00000F00);
-//         sumofIm+= imtemp*256;
-
-         temp6[0]=(qint8)temp.at(7);
-         imtemp = strtol(temp6,NULL,16);
-         sumofIm |= ((imtemp<<4) & 0x000000F0);
-//         sumofIm+= imtemp*16;
-
-         temp7[0]=(qint8)temp.at(8);
-         imtemp = strtol(temp7,NULL,16);
-         sumofIm = ((imtemp<<0) & 0x0000000F);
-//         sumofIm+= imtemp;
-         ImofRecv = sumofIm;
-//         qDebug("Im is %d",ImofRecv);
-//         qDebug("Im is %X",ImofRecv);
-         this->realtimeRange = sqrt((double)ReofRecv*(double)ReofRecv+(double)ImofRecv*(double)ImofRecv);
+        //以下代码计算模值，也就是magnitude
+        this->realtimeRange = sqrt((double)ReofRecv*(double)ReofRecv+(double)ImofRecv*(double)ImofRecv);
 //        qDebug("realtimeRange is %f",realtimeRange);
 
-     }
-     if(displayCurveFlag == 1)//校准完毕再显示数据
-     {
-         emit isReceiveData();//发送信号，通知processrevdata槽函数处理数据
-     }
-     emit startCalibrate();//发送开始校准信号，通知calibrateProcess槽函数处理数据
+
+        //以下代码是设置坐标轴y轴最大值的代码
+        yaxis[countofYaxis]=ReofRecv;
+        countofYaxis++;
+        if(countofYaxis == 5)
+        {
+            for(int i=0;i<5;i++)
+                sum +=yaxis[i];
+            sum = sum/5;
+            ui->qwtPlot_mainwin->setAxisScale( QwtPlot::yLeft, 0, sum*2);//设置y轴的最大值是5次平均值的2倍
+            countofYaxis = 0;
+            sum = 0;
+        }
+
+
+    }
+    if(this->displayCurveFlag == 1)//正常显示模式下，显示数据，此时已经校准完毕
+    {
+        emit isReceiveData();//发送信号，通知processrevdata槽函数处理数据
+    }
+    if(this->displayCurveFlag == 0)//校准模式下
+    {
+        emit startCalibrate();//发送开始校准信号，通知calibrateProcess槽函数处理数据
+    }
 }
-static qint64 count1;//统计第1通道接收数据个数变量
-//static qint64 count2;//统计第2通道接收数据个数变量
-//static qint64 count3;//统计第3通道接收数据个数变量
+/***********************************************************************
+*   函 数 名: processrevdata
+*   功能说明: 串口数据接收计算完后，处理实部和虚部的槽函数，对应信号是MainWindow::isReceiveData
+*   注    意：本函数使用的gainFactor只是在校准后才有数值
+*            通知hismainwin历史数据窗体更新tableview数值
+*            通知mainwin更新窗体上面的曲线数据
+***********************************************************************/
+static qint64 count1;//实时统计第1通道接收数据个数变量
+//static qint64 count2;//实时统计第2通道接收数据个数变量
+//static qint64 count3;//实时统计第3通道接收数据个数变量
 void MainWindow::processrevdata()//响应isReceiveData信号的处理数据槽函数
 {
-    this->realResValue = ui->liEdt_Calbra->text().toDouble()*this->realtimeRange/this->gainFactor;
-//    qDebug("liEdt_Calbra is %f",ui->liEdt_Calbra->text().toDouble());
-//    qDebug("realtimeRange is %f",realtimeRange);
-//    qDebug("this->gainFactor is %f",this->gainFactor);
-//    qDebug("realResValue is %f",realResValue);
-//    QString str = QString("%1").arg(this->realResValue,0,'f',1);
+    this->realResValue = this->gainFactor/this->realtimeRange;
     ui->lcdNumber1->display(this->realResValue/1000);
-
-
     count1++;
 
 //    ImofRecv = ImofRecv * (-1);
 //    ui->lcdNumber2->display((double)ImofRecv/1000);
 //    count2++;
 
-//    ui->lcdNumber3->display(dataReadBuffer[2].Heartdata);
-//    count3++;
-
     emit notifyhiswin();//通知hismainwin窗体的tableview更新数据，并更新数据库
     emit notifywinUpdatecurv();//通知mainwin更新曲线数据
 }
+/***********************************************************************
+*   函 数 名: timeoutdisplay
+*   功能说明: 检测接收数据是否超时函数，对应信号为timer的SIGNAL(timeout())
+*   注    意：和上面的count1要联动使用
+***********************************************************************/
+static qint64 no1oldnum,no1newnum;//暂存第1通道接收到的数据个数
+//static qint64 no2oldnum,no2newnum;//暂存第2通道接收到的数据个数
+//static qint64 no3oldnum,no3newnum;//暂存第3通道接收到的数据个数
+void MainWindow::timeoutdisplay()//超时检测槽函数
+{
+
+    //计算是否掉线
+    no1oldnum = no1newnum;
+    no1newnum = count1;
+    if(no1oldnum == no1newnum)  //如果数据个数没有增加，则超时
+    {
+        ui->lcdNumber1->display(tr("------"));
+    }
+//    计算是否掉线
+//    no2oldnum = no2newnum;
+//    no2newnum = count2;
+//    if(no2oldnum == no2newnum)
+//    {
+//        ui->lcdNumber2->display(tr("------"));
+//    }
+//    计算是否掉线
+//    no3oldnum = no3newnum;
+//    no3newnum = count3;
+//    if(no3oldnum == no3newnum)
+//    {
+//        ui->lcdNumber3->display(tr("------"));
+//        ui->ThermoBP3->setValue(0);
+//        ui->ThermoHP3->setValue(0);
+//    }
+}
+/***********************************************************************
+*   函 数 名: updatecurve
+*   功能说明: Mainwindow窗体更新显示曲线的槽函数，对应信号为MainWindow::notifywinUpdatecurv
+*   注    意：
+***********************************************************************/
 static qint32 count;//串口接收到数据的计数器
 void MainWindow::updatecurve()
 {
@@ -382,7 +445,7 @@ void MainWindow::updatecurve()
             valofRe[i] = valofRe[i+1];//将曲线1的数据数组前移一位
         }
     }
-    valofRe[count] = mainwin->realResValue;//设置数据
+    valofRe[count] = this->realResValue;//设置数据
     count++;
 
     p_curve->setSamples(times,valofRe,count);
@@ -390,37 +453,11 @@ void MainWindow::updatecurve()
     ui->qwtPlot_mainwin->replot();//重绘数据
 }
 
-void MainWindow::timeoutdisplay()//超时检测槽函数
-{
-    static qint64 no1oldnum,no1newnum;
-    static qint64 no2oldnum,no2newnum;
-//    static qint64 no3oldnum,no3newnum;
-
-    //计算是否掉线
-    no1oldnum = no1newnum;
-    no1newnum = count1;
-    if(no1oldnum == no1newnum)  //
-    {
-        ui->lcdNumber1->display(tr("------"));
-    }
-    //计算是否掉线
-//    no2oldnum = no2newnum;
-//    no2newnum = count2;
-//    if(no2oldnum == no2newnum)
-//    {
-//        ui->lcdNumber2->display(tr("------"));
-//    }
-    //计算是否掉线
-//    no3oldnum = no3newnum;
-//    no3newnum = count3;
-//    if(no3oldnum == no3newnum)
-//    {
-//        ui->lcdNumber3->display(tr("------"));
-//        ui->ThermoBP3->setValue(0);
-//        ui->ThermoHP3->setValue(0);
-//    }
-}
-
+/***********************************************************************
+*   函 数 名: handleError
+*   功能说明: 处理错误槽函数
+*   注    意：
+***********************************************************************/
 void MainWindow::handleError(QSerialPort::SerialPortError error)
 {
     if (error == QSerialPort::ResourceError)
@@ -429,7 +466,11 @@ void MainWindow::handleError(QSerialPort::SerialPortError error)
         closeSerialPort();
     }
 }
-//设置按键的信号和槽
+/***********************************************************************
+*   函 数 名: initActionsConnections
+*   功能说明: 设置按键的信号和槽
+*   注    意：
+***********************************************************************/
 void MainWindow::initActionsConnections()
 {
     connect(ui->actionConnect, &QAction::triggered, this, &MainWindow::openSerialPort);
@@ -439,7 +480,11 @@ void MainWindow::initActionsConnections()
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::about);
     connect(ui->actionAboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
 }
-//初始化LCD控件的属性
+/***********************************************************************
+*   函 数 名: initLcdNumbers
+*   功能说明: 初始化LCD控件的属性
+*   注    意：
+***********************************************************************/
 void MainWindow::initLcdNumbers()
 {
     QPalette pal( Qt::black );
@@ -462,29 +507,30 @@ void MainWindow::initLcdNumbers()
     ui->lcdNumber2->display(tr("------"));
 
 }
-//设置电池电量控件方向
-void MainWindow::initThermoBPs()
-{
-
-}
-//设置心率带电量控件方向
-void MainWindow::initThermoHPs()
-{
-
-}
+/***********************************************************************
+*   函 数 名: showStatusMessage
+*   功能说明: 窗体下方状态栏显示
+*   注    意：
+***********************************************************************/
 void MainWindow::showStatusMessage(const QString &message)
 {
     status->setText(message);
 }
-
+/***********************************************************************
+*   函 数 名: on_btnHistory_clicked
+*   功能说明: 跳转到his历史数据窗体
+*   注    意：
+***********************************************************************/
 void MainWindow::on_btnHistory_clicked()
 {
     this->hide();
     historywin->show();
 }
-
-
-
+/***********************************************************************
+*   函 数 名: on_btnExit_clicked
+*   功能说明: 退出按钮响应参函数
+*   注    意：关闭数据库线程，同时启动了一个进度条界面，界面时间暂定20000个循环
+***********************************************************************/
 void MainWindow::on_btnExit_clicked()
 {
     if(this->serial->isOpen() == true)
@@ -492,7 +538,6 @@ void MainWindow::on_btnExit_clicked()
         this->closeSerialPort();
     }
     datathread->stopped = true;
-
 
     QTest::qSleep(1000);
 
@@ -509,17 +554,29 @@ void MainWindow::on_btnExit_clicked()
     dialog.setValue(20000);//设置进度条为满值
     this->close();
 }
-
+/***********************************************************************
+*   函 数 名: on_btnConnect_clicked
+*   功能说明: 连接按钮槽函数，打开串口
+*   注    意：
+***********************************************************************/
 void MainWindow::on_btnConnect_clicked()
 {
     this->openSerialPort();
 }
-
+/***********************************************************************
+*   函 数 名: on_btnDisconnect_clicked
+*   功能说明: 断开按钮槽函数，关闭串口
+*   注    意：
+***********************************************************************/
 void MainWindow::on_btnDisconnect_clicked()
 {
     this->closeSerialPort();
 }
-
+/***********************************************************************
+*   函 数 名: on_btnSet_clicked
+*   功能说明: 设置按钮，打开设置串口界面
+*   注    意：
+***********************************************************************/
 void MainWindow::on_btnSet_clicked()
 {
     this->btnConfigProcess();
@@ -537,16 +594,20 @@ void MainWindow::on_btnCalibra_clicked()
     connect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);//打开串口后，有数据接收，通知校准槽函数，接收校准数据
 
 }
+/***********************************************************************
+*   函 数 名: calibrateProcess
+*   功能说明:
+*   注    意：
+***********************************************************************/
+static quint64 calibraReArray[100];//存储校准实部数据的数组
+static quint8 cntRe=0;//实部数据个数
+static quint64 sumofReCalibra;//实部数据总和
+static quint64 avgRe;//实部数据均值
 
-static quint64 calibraReArray[100];
-static quint8 cntRe=0;
-static quint64 sumofReCalibra;
-static quint64 avgRe;
-
-static quint64 calibraImArray[100];
-static quint8 cntIm=0;
-static quint64 sumofImCalibra;
-static quint64 avgIm;
+static quint64 calibraImArray[100];//存储校准虚部数据的数组
+static quint8 cntIm=0;//虚部数据个数
+static quint64 sumofImCalibra;//虚部数据总和
+static quint64 avgIm;//虚部数据均值
 
 void MainWindow::calibrateProcess()
 {
@@ -574,16 +635,18 @@ void MainWindow::calibrateProcess()
 
     if((cntRe == 100) && (cntIm == 100))
     {
+        cntRe = 0;
+        cntIm = 0;
+
         double retemp,imtemp;
         retemp=(double)avgRe;
         imtemp=(double)avgIm;
-        gainFactor = sqrt(retemp*retemp + imtemp*imtemp);
+        //计算增益系数，即是gainFactor
+        this->gainFactor = sqrt(retemp*retemp + imtemp*imtemp)*ui->liEdt_Calbra->text().toDouble();
+        qDebug("gain factor is %f",this->gainFactor);
+        //计算完增益系数后，断开startCalibrate信号和本函数的连接，并关闭串口
         disconnect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);
         this->closeSerialPort();
-        qDebug("gain factor is %f",this->gainFactor*ui->liEdt_Calbra->text().toDouble());
-
-        cntRe = 0;
-        cntIm = 0;
 
         this->displayCurveFlag = 1;//校准完毕，置位显示标志位
         ui->btnConnect->setEnabled(true);
@@ -604,4 +667,13 @@ void MainWindow::calibrateProcess()
 //    this->hide();
 //    curvewgt->show();
 //}
+//设置电池电量控件方向
+void MainWindow::initThermoBPs()
+{
 
+}
+//设置心率带电量控件方向
+void MainWindow::initThermoHPs()
+{
+
+}
