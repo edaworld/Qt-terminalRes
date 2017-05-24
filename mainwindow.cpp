@@ -55,8 +55,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 //初始化控件
     this->initLcdNumbers();
-    this->initThermoBPs();
-    this->initThermoHPs();
+//    this->initThermoBPs();
+//    this->initThermoHPs();
 
     serial = new QSerialPort(this);
     settings = new SettingsDialog;
@@ -260,12 +260,12 @@ static quint64 yaxis[10];
 static quint8 countofYaxis;
 static quint64 sum;
 //读取串口数据，这里仅仅实现数据的拷贝，为了节省时间，显示任务放到processrevdata槽函数中
-qint32 sumofRe;//实部加和
-qint32 sumofIm;//虚部加和
+qint16 sumofRe;//实部加和
+qint16 sumofIm;//虚部加和
 void MainWindow::readData()
 {
-    quint32 rcvtemp;//暂存实部数据
-    quint32 imtemp;//暂存虚部数据
+    qint32 rcvtemp;//暂存实部数据
+    qint32 imtemp;//暂存虚部数据
 
     QByteArray dataReadAll = serial->readAll();
 //    qDebug("read data size is %d,count is %d",dataReadAll.size(),dataReadAll.count());
@@ -295,59 +295,63 @@ void MainWindow::readData()
         sumofRe=0;
         temp0[0]=(qint8)temp.at(1);
         rcvtemp = strtol(temp0,NULL,16);
-        sumofRe |= ((rcvtemp<<12) & 0x0000F000);
+        sumofRe |= ((rcvtemp<<12) & 0xF000);
 //        sumofRe+= rcvtemp*4096;
 
         temp1[0]=(qint8)temp.at(2);
         rcvtemp = strtol(temp1,NULL,16);
-        sumofRe |= ((rcvtemp<<8) & 0x00000F00);
+        sumofRe |= ((rcvtemp<<8) & 0x0F00);
 //        sumofRe+= rcvtemp*256;
 
         temp2[0]=(qint8)temp.at(3);
         rcvtemp = strtol(temp2,NULL,16);
-        sumofRe |= ((rcvtemp<<4) & 0x000000F0);
+        sumofRe |= ((rcvtemp<<4) & 0x00F0);
 //        sumofRe+= rcvtemp*16;
 
         temp3[0]=(qint8)temp.at(4);
         rcvtemp = strtol(temp3,NULL,16);
-        sumofRe |= ((rcvtemp<<0) & 0x0000000F);
+        sumofRe |= ((rcvtemp<<0) & 0x000F);
 //        sumofRe+= rcvtemp;
         this->ReofRecv = sumofRe;
-//        qDebug("%d",ReofRecv);
-//        qDebug("Re is %X",ReofRecv);
+        qDebug("%d",this->ReofRecv);
+        qDebug("Re is %X",this->ReofRecv);
 
         //以下代码计算虚部
         sumofIm=0;
         temp4[0]=(qint8)temp.at(5);
         imtemp = strtol(temp4,NULL,16);
-        sumofIm |= ((imtemp<<12) & 0x0000F000);
+        sumofIm |= ((imtemp<<12) & 0xF000);
+//        qDebug("sumofIm is %X",sumofIm);
 //        sumofIm+= imtemp*4096;
 
         temp5[0]=(qint8)temp.at(6);
         imtemp = strtol(temp5,NULL,16);
-        sumofIm |= ((imtemp<<8) & 0x00000F00);
+        sumofIm |= ((imtemp<<8) & 0x0F00);
+//        qDebug("sumofIm is %X",sumofIm);
 //        sumofIm+= imtemp*256;
 
         temp6[0]=(qint8)temp.at(7);
         imtemp = strtol(temp6,NULL,16);
-        sumofIm |= ((imtemp<<4) & 0x000000F0);
+        sumofIm |= ((imtemp<<4) & 0x00F0);
+//        qDebug("sumofIm is %X",sumofIm);
 //        sumofIm+= imtemp*16;
 
         temp7[0]=(qint8)temp.at(8);
         imtemp = strtol(temp7,NULL,16);
-        sumofIm = ((imtemp<<0) & 0x0000000F);
+        sumofIm |= ((imtemp<<0) & 0x000F);
+//        qDebug("sumofIm is %X",sumofIm);
 //        sumofIm+= imtemp;
         this->ImofRecv = sumofIm;
-//        qDebug("Im is %d",ImofRecv);
-//        qDebug("Im is %X",ImofRecv);
+        qDebug("%d",this->ImofRecv);
+        qDebug("Im is %X",this->ImofRecv);
 
         //以下代码计算模值，也就是magnitude
-        this->realtimeRange = sqrt((double)ReofRecv*(double)ReofRecv+(double)ImofRecv*(double)ImofRecv);
-//        qDebug("realtimeRange is %f",realtimeRange);
+        this->magnitude = sqrt((double)ReofRecv*(double)ReofRecv+(double)ImofRecv*(double)ImofRecv);
+        qDebug("realtimeRange is %f",magnitude);
 
 
         //以下代码是设置坐标轴y轴最大值的代码
-        yaxis[countofYaxis]=ReofRecv;
+        yaxis[countofYaxis]=this->ReofRecv;
         countofYaxis++;
         if(countofYaxis == 5)
         {
@@ -359,7 +363,6 @@ void MainWindow::readData()
             sum = 0;
         }
 
-
     }
     if(this->displayCurveFlag == 1)//正常显示模式下，显示数据，此时已经校准完毕
     {
@@ -369,6 +372,7 @@ void MainWindow::readData()
     {
         emit startCalibrate();//发送开始校准信号，通知calibrateProcess槽函数处理数据
     }
+
 }
 /***********************************************************************
 *   函 数 名: processrevdata
@@ -382,7 +386,7 @@ static qint64 count1;//实时统计第1通道接收数据个数变量
 //static qint64 count3;//实时统计第3通道接收数据个数变量
 void MainWindow::processrevdata()//响应isReceiveData信号的处理数据槽函数
 {
-    this->realResValue = this->gainFactor/this->realtimeRange;
+    this->realResValue = this->gainFactor/this->magnitude;//计算后的数值
     ui->lcdNumber1->display(this->realResValue/1000);
     count1++;
 
@@ -599,21 +603,21 @@ void MainWindow::on_btnCalibra_clicked()
 *   功能说明:
 *   注    意：
 ***********************************************************************/
-static quint64 calibraReArray[100];//存储校准实部数据的数组
+static qint64 calibraReArray[100];//存储校准实部数据的数组
 static quint8 cntRe=0;//实部数据个数
-static quint64 sumofReCalibra;//实部数据总和
-static quint64 avgRe;//实部数据均值
+static qint64 sumofReCalibra;//实部数据总和
+static qint64 avgRe;//实部数据均值
 
-static quint64 calibraImArray[100];//存储校准虚部数据的数组
+static qint64 calibraImArray[100];//存储校准虚部数据的数组
 static quint8 cntIm=0;//虚部数据个数
-static quint64 sumofImCalibra;//虚部数据总和
-static quint64 avgIm;//虚部数据均值
+static qint64 sumofImCalibra;//虚部数据总和
+static qint64 avgIm;//虚部数据均值
 
 void MainWindow::calibrateProcess()
 {
     this->displayCurveFlag = 0;//一旦进入校准程序，曲线默认不显示
 
-    calibraReArray[cntRe]=ReofRecv;
+    calibraReArray[cntRe]=this->ReofRecv;
     cntRe++;
     if(cntRe == 100)
     {
@@ -641,9 +645,15 @@ void MainWindow::calibrateProcess()
         double retemp,imtemp;
         retemp=(double)avgRe;
         imtemp=(double)avgIm;
+
+        qDebug("avgRe is %d",avgRe);
+        qDebug("avgIm is %d",avgIm);
+
+
         //计算增益系数，即是gainFactor
         this->gainFactor = sqrt(retemp*retemp + imtemp*imtemp)*ui->liEdt_Calbra->text().toDouble();
         qDebug("gain factor is %f",this->gainFactor);
+
         //计算完增益系数后，断开startCalibrate信号和本函数的连接，并关闭串口
         disconnect(mainwin,&MainWindow::startCalibrate,mainwin,&MainWindow::calibrateProcess);
         this->closeSerialPort();
@@ -668,12 +678,12 @@ void MainWindow::calibrateProcess()
 //    curvewgt->show();
 //}
 //设置电池电量控件方向
-void MainWindow::initThermoBPs()
-{
+//void MainWindow::initThermoBPs()
+//{
 
-}
-//设置心率带电量控件方向
-void MainWindow::initThermoHPs()
-{
+//}
+////设置心率带电量控件方向
+//void MainWindow::initThermoHPs()
+//{
 
-}
+//}

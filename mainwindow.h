@@ -110,11 +110,11 @@ public:
     quint8 ImofRes[4];//电阻抗虚部
 
     QByteArray temp;//暂存串口接收到的数据，凑足12个字节
-    quint32 ReofRecv;//接收数据的实部
-    quint32 ImofRecv;//接收数据的虚部
+    qint16 ReofRecv;//接收数据的实部
+    qint16 ImofRecv;//接收数据的虚部
 
     double gainFactor;//增益系数
-    double realtimeRange;//实施计算的幅度
+    double magnitude;//实施计算的幅度
     quint8 displayCurveFlag;//是否显示曲线的标志位
 
     double realResValue;//真实计算出的阻值
@@ -163,8 +163,8 @@ signals:
 private:
     void initActionsConnections();
     void initLcdNumbers();
-    void initThermoBPs();
-    void initThermoHPs();
+//    void initThermoBPs();
+//    void initThermoHPs();
 
 private:
     void showStatusMessage(const QString &message);
