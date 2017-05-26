@@ -256,9 +256,9 @@ void MainWindow::writeData(const QByteArray &data)
 *            ImofRecv接收数据的虚部
 *            realtimeRange计算的幅度=Magnitude
 ***********************************************************************/
-static quint64 yaxis[10];
-static quint8 countofYaxis;
-static quint64 sum;
+//static quint64 yaxis[10];
+//static quint8 countofYaxis;
+//static quint64 sum;
 //读取串口数据，这里仅仅实现数据的拷贝，为了节省时间，显示任务放到processrevdata槽函数中
 qint16 sumofRe;//实部加和
 qint16 sumofIm;//虚部加和
@@ -351,17 +351,17 @@ void MainWindow::readData()
 
 
         //以下代码是设置坐标轴y轴最大值的代码
-        yaxis[countofYaxis]=this->ReofRecv;
-        countofYaxis++;
-        if(countofYaxis == 5)
-        {
-            for(int i=0;i<5;i++)
-                sum +=yaxis[i];
-            sum = sum/5;
-            ui->qwtPlot_mainwin->setAxisScale( QwtPlot::yLeft, 0, sum*2);//设置y轴的最大值是5次平均值的2倍
-            countofYaxis = 0;
-            sum = 0;
-        }
+//        yaxis[countofYaxis] = abs(this->ReofRecv);//实部是有符号数
+//        countofYaxis++;
+//        if(countofYaxis == 5)
+//        {
+//            for(int i=0;i<5;i++)
+//                sum += yaxis[i];
+//            sum = sum/5;
+//            ui->qwtPlot_mainwin->setAxisScale( QwtPlot::yLeft, 0, sum*2);//设置y轴的最大值是5次平均值的2倍
+//            countofYaxis = 0;
+//            sum = 0;
+//        }
 
     }
     if(this->displayCurveFlag == 1)//正常显示模式下，显示数据，此时已经校准完毕
@@ -384,9 +384,28 @@ void MainWindow::readData()
 static qint64 count1;//实时统计第1通道接收数据个数变量
 //static qint64 count2;//实时统计第2通道接收数据个数变量
 //static qint64 count3;//实时统计第3通道接收数据个数变量
+
+static quint64 yaxis[10];
+static quint8 countofYaxis;
+static quint64 sum;
+
 void MainWindow::processrevdata()//响应isReceiveData信号的处理数据槽函数
 {
     this->realResValue = this->gainFactor/this->magnitude;//计算后的数值
+
+
+    yaxis[countofYaxis] = abs(this->realResValue);
+    countofYaxis++;
+    if(countofYaxis == 5)
+    {
+        for(int i=0;i<5;i++)
+            sum += yaxis[i];
+        sum = sum/5;
+        ui->qwtPlot_mainwin->setAxisScale( QwtPlot::yLeft, 0, sum*2);//设置y轴的最大值是5次平均值的2倍
+        countofYaxis = 0;
+        sum = 0;
+    }
+
     ui->lcdNumber1->display(this->realResValue/1000);
     count1++;
 

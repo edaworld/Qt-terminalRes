@@ -36,7 +36,7 @@ public:
     QSpacerItem *verticalSpacer;
     QPushButton *btnClear_his;
     QPushButton *btnPrint_his;
-    QPushButton *btnCurve_his;
+    QPushButton *btnSave;
     QPushButton *btnReturn_his;
     QMenuBar *menubar;
     QStatusBar *statusbar;
@@ -45,7 +45,7 @@ public:
     {
         if (HisMainWin->objectName().isEmpty())
             HisMainWin->setObjectName(QStringLiteral("HisMainWin"));
-        HisMainWin->resize(820, 460);
+        HisMainWin->resize(829, 464);
         centralwidget = new QWidget(HisMainWin);
         centralwidget->setObjectName(QStringLiteral("centralwidget"));
         horizontalLayout = new QHBoxLayout(centralwidget);
@@ -89,16 +89,16 @@ public:
 
         verticalLayout->addWidget(btnPrint_his);
 
-        btnCurve_his = new QPushButton(centralwidget);
-        btnCurve_his->setObjectName(QStringLiteral("btnCurve_his"));
-        sizePolicy.setHeightForWidth(btnCurve_his->sizePolicy().hasHeightForWidth());
-        btnCurve_his->setSizePolicy(sizePolicy);
+        btnSave = new QPushButton(centralwidget);
+        btnSave->setObjectName(QStringLiteral("btnSave"));
+        sizePolicy.setHeightForWidth(btnSave->sizePolicy().hasHeightForWidth());
+        btnSave->setSizePolicy(sizePolicy);
         QIcon icon2;
-        icon2.addFile(QStringLiteral(":/images/help.ico"), QSize(), QIcon::Normal, QIcon::Off);
-        btnCurve_his->setIcon(icon2);
-        btnCurve_his->setIconSize(QSize(32, 32));
+        icon2.addFile(QStringLiteral(":/images/save.png"), QSize(), QIcon::Normal, QIcon::Off);
+        btnSave->setIcon(icon2);
+        btnSave->setIconSize(QSize(32, 32));
 
-        verticalLayout->addWidget(btnCurve_his);
+        verticalLayout->addWidget(btnSave);
 
         btnReturn_his = new QPushButton(centralwidget);
         btnReturn_his->setObjectName(QStringLiteral("btnReturn_his"));
@@ -117,7 +117,7 @@ public:
         HisMainWin->setCentralWidget(centralwidget);
         menubar = new QMenuBar(HisMainWin);
         menubar->setObjectName(QStringLiteral("menubar"));
-        menubar->setGeometry(QRect(0, 0, 820, 23));
+        menubar->setGeometry(QRect(0, 0, 829, 23));
         HisMainWin->setMenuBar(menubar);
         statusbar = new QStatusBar(HisMainWin);
         statusbar->setObjectName(QStringLiteral("statusbar"));
@@ -133,7 +133,7 @@ public:
         HisMainWin->setWindowTitle(QApplication::translate("HisMainWin", "MainWindow", 0));
         btnClear_his->setText(QString());
         btnPrint_his->setText(QString());
-        btnCurve_his->setText(QString());
+        btnSave->setText(QString());
         btnReturn_his->setText(QString());
     } // retranslateUi
 

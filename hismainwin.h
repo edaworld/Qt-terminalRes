@@ -36,13 +36,15 @@ public:
 private slots:
     void on_btnReturn_his_clicked();
 
-    void on_btnCurve_his_clicked();
+//    void on_btnCurve_his_clicked();
 
     void on_btnPrint_his_clicked();
 
 //    void on_btnExit_his_clicked();
 
     void on_btnClear_his_clicked();
+
+    void on_btnSave_clicked();
 
 public slots:
     void insAndupdatetblview();

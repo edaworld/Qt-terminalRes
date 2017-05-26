@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>820</width>
-    <height>460</height>
+    <width>829</width>
+    <height>464</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,7 +86,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="btnCurve_his">
+       <widget class="QPushButton" name="btnSave">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -98,7 +98,7 @@
         </property>
         <property name="icon">
          <iconset resource="terminal.qrc">
-          <normaloff>:/images/help.ico</normaloff>:/images/help.ico</iconset>
+          <normaloff>:/images/save.png</normaloff>:/images/save.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -140,7 +140,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>820</width>
+     <width>829</width>
      <height>23</height>
     </rect>
    </property>
